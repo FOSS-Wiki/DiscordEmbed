@@ -91,7 +91,7 @@ class DiscordEmbed extends SimpleHandler
             'components' => [ [
                 'type' => 2,
                 'style' => 5,
-                'label' => 'Edit',
+                'label' => 'Edit Page',
                 'url' => $title->getCanonicalURL() . '?action=edit',
             ] ],
         ];
