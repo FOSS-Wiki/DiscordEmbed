@@ -51,9 +51,9 @@ class DiscordEmbed extends SimpleHandler
 
     private function fetchThumbnailUrl(ExistingPageRecord $page): ?string
     {
-        $props = $this->pageProps->getProperties($page, [ 'page_image_free', 'page_image' ]);
+        $props = $this->pageProps->getProperties($page, [ 'page_image' ]);
         $pageProps = $props[$page->getId()] ?? [];
-        $fileName = $pageProps['page_image_free'] ?? $pageProps['page_image'] ?? null;
+        $fileName = $pageProps['page_image'] ?? null;
         $file = $fileName !== null ? $this->repoGroup->findFile($fileName) : null;
         $thumb = $file ? $file->transform([ 'width' => 500 ]) : null;
         if (!$thumb || $thumb->isError()) {
