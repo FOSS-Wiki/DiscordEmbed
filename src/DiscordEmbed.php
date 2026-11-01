@@ -75,39 +75,52 @@ class DiscordEmbed extends SimpleHandler
         $description = $this->escapeMarkdown($this->fetchDescription($page));
         $thumbnail = $this->fetchThumbnailUrl($page);
 
+        $isMainPage = $title->isMainPage();
+
+        if ($isMainPage) {
+            // Custom home page embed
+            $markdownTitle = $this->escapeMarkdown('FOSS Wiki');
+            $description   = $this->escapeMarkdown('FOSS Wiki is a centralised, easy-to-use reference for the FOSS
+            and Linux ecosystem that provides clear overviews and practical guides for all users!');
+            $thumbnail = 'https://images.foss.wiki/logo.png';
+        }
+
         $text = [ 'type' => 10, 'content' => "# [$markdownTitle]($markdownUrl)\n\n$description" ];
         $components = [ $text ];
         if ($thumbnail !== null) {
             $components = [ [
-                'type' => 9,
-                'components' => [ $text ],
-                'accessory' => [ 'type' => 11, 'media' => [ 'url' => $thumbnail ] ],
+            'type' => 9,
+            'components' => [ $text ],
+            'accessory' => [ 'type' => 11, 'media' => [ 'url' => $thumbnail ] ],
             ] ];
         }
 
-        $buttons = [ [
+        // No buttons on the main page
+        if (!$isMainPage) {
+            $buttons = [ [
             'type' => 2,
             'style' => 5,
             'label' => 'Edit',
             'emoji' => [ 'name' => "\u{270F}\u{FE0F}" ],
             'url' => $title->getCanonicalURL() . '?action=edit',
-        ] ];
+            ] ];
 
-        $talkTitle = $title->getTalkPageIfDefined();
-        if ($talkTitle !== null) {
-            $buttons[] = [
+            $talkTitle = $title->getTalkPageIfDefined();
+            if ($talkTitle !== null) {
+                $buttons[] = [
                 'type' => 2,
                 'style' => 5,
                 'label' => 'Talk',
                 'emoji' => [ 'name' => "\u{1F5E8}\u{FE0F}" ],
                 'url' => $talkTitle->getCanonicalURL(),
-            ];
-        }
+                ];
+            }
 
-        $components[] = [
+            $components[] = [
             'type' => 1,
             'components' => $buttons,
-        ];
+            ];
+        }
 
         $response = $this->getResponseFactory()->createJson(
             [ 'component' => [ 'type' => 17, 'components' => $components ] ]
