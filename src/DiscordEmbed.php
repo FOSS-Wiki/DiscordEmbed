@@ -75,7 +75,7 @@ class DiscordEmbed extends SimpleHandler
         $description = $this->escapeMarkdown($this->fetchDescription($page));
         $thumbnail = $this->fetchThumbnailUrl($page);
 
-        $text = ['type' => 10, 'content' => "# [$markdownTitle]($markdownUrl)\n\n$description"];
+        $text = [ 'type' => 10, 'content' => "# [$markdownTitle]($markdownUrl)\n\n$description" ];
         $components = [ $text ];
         if ($thumbnail !== null) {
             $components = [ [
@@ -85,16 +85,28 @@ class DiscordEmbed extends SimpleHandler
             ] ];
         }
 
-        // Link button under the embed
-        $components[] = [
-            'type' => 1,
-            'components' => [ [
+        $buttons = [ [
+            'type' => 2,
+            'style' => 5,
+            'label' => 'Edit',
+            'emoji' => [ 'name' => "\u{270F}\u{FE0F}" ],
+            'url' => $title->getCanonicalURL() . '?action=edit',
+        ] ];
+
+        $talkTitle = $title->getTalkPageIfDefined();
+        if ($talkTitle !== null) {
+            $buttons[] = [
                 'type' => 2,
                 'style' => 5,
-                'label' => 'Edit',
-                'emoji' => [ 'name' => "\u{270F}\u{FE0F}" ],
-                'url' => $title->getCanonicalURL() . '?action=edit',
-            ] ],
+                'label' => 'Talk',
+                'emoji' => [ 'name' => "\u{1F5E8}\u{FE0F}" ],
+                'url' => $talkTitle->getCanonicalURL(),
+            ];
+        }
+
+        $components[] = [
+            'type' => 1,
+            'components' => $buttons,
         ];
 
         $response = $this->getResponseFactory()->createJson(
