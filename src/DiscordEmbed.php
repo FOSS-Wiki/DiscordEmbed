@@ -80,8 +80,7 @@ class DiscordEmbed extends SimpleHandler
         if ($isMainPage) {
             // Custom home page embed
             $markdownTitle = $this->escapeMarkdown('FOSS Wiki');
-            $description   = $this->escapeMarkdown('FOSS Wiki is a centralised, easy-to-use reference for the FOSS
-            and Linux ecosystem that provides clear overviews and practical guides for all users!');
+            $description   = $this->escapeMarkdown('FOSS Wiki is a centralised, easy-to-use reference for the FOSS and Linux ecosystem that provides clear overviews and practical guides for all users!');
             $thumbnail = 'https://images.foss.wiki/logo.png';
         }
 
