@@ -7,13 +7,9 @@
 
 namespace MediaWiki\Extension\DiscordEmbed;
 
-use LogicException;
-use MediaWiki\Content\WikiTextStructure;
 use MediaWiki\FileRepo\RepoGroup;
 use MediaWiki\Page\ExistingPageRecord;
 use MediaWiki\Page\PageProps;
-use MediaWiki\Page\ParserOutputAccess;
-use MediaWiki\Parser\ParserOptions;
 use MediaWiki\Rest\Handler;
 use MediaWiki\Rest\Handler\Helper\PageContentHelper;
 use MediaWiki\Rest\Handler\Helper\PageRestHelperFactory;
@@ -21,13 +17,11 @@ use MediaWiki\Rest\Response;
 use MediaWiki\Rest\SimpleHandler;
 use MediaWiki\Title\TitleFactory;
 use MediaWiki\Utils\UrlUtils;
-use Wikimedia\ObjectCache\WANObjectCache;
 use Wikimedia\ParamValidator\ParamValidator;
 
 class DiscordEmbed extends SimpleHandler
 {
-    private const CACHE_VERSION = 1;
-    private const EXCLUDED_ELEMENT_SELECTORS = [ '.noexcerpt' ];
+    private const MAX_LENGTH = 350;
 
     private PageContentHelper $contentHelper;
 
@@ -35,59 +29,24 @@ class DiscordEmbed extends SimpleHandler
         PageRestHelperFactory $helperFactory,
         private readonly TitleFactory $titleFactory,
         private readonly UrlUtils $urlUtils,
-        private readonly ParserOutputAccess $parserOutputAccess,
         private readonly PageProps $pageProps,
         private readonly RepoGroup $repoGroup,
-        private readonly WANObjectCache $cache,
     ) {
         $this->contentHelper = $helperFactory->newPageContentHelper();
     }
 
-    // Escape characters Discord would treat as Markdown
     private function escapeMarkdown(string $text): string
     {
         return preg_replace('/[\\\\*_~`|#>\[\]]/', '\\\\$0', $text);
     }
 
-    private function fetchExtract(ExistingPageRecord $page): string
+    private function fetchDescription(ExistingPageRecord $page): string
     {
-        return $this->cache->getWithSetCallback(
-            $this->cache->makeKey(
-                'DiscordEmbed',
-                'extract',
-                self::CACHE_VERSION,
-                $page->getId(),
-                $page->getTouched()
-            ),
-            WANObjectCache::TTL_DAY,
-            function ($oldValue, &$ttl) use ($page): string {
-                $extract = $this->buildExtract($page);
-                if ($extract === '') {
-                    $ttl = WANObjectCache::TTL_UNCACHEABLE;
-                }
-                return $extract;
-            }
-        );
-    }
-
-    private function buildExtract(ExistingPageRecord $page): string
-    {
-        $status = $this->parserOutputAccess->getParserOutput(
-            $page,
-            ParserOptions::newFromAnon(),
-            null,
-            [ ParserOutputAccess::OPT_FOR_ARTICLE_VIEW => true ]
-        );
-        if (!$status->isOK()) {
-            return '';
-        }
-        try {
-            $structure = new WikiTextStructure($status->getValue(), self::EXCLUDED_ELEMENT_SELECTORS);
-            $extract = $structure->getOpeningText() ?? $structure->getMainText();
-        } catch (LogicException) {
-            return '';
-        }
-        return mb_strlen($extract) > 350 ? mb_substr($extract, 0, 349) . '…' : $extract;
+        $props = $this->pageProps->getProperties($page, [ 'description' ]);
+        $description = trim($props[$page->getId()]['description'] ?? '');
+        return mb_strlen($description) > self::MAX_LENGTH
+            ? mb_substr($description, 0, self::MAX_LENGTH - 1) . '…'
+            : $description;
     }
 
     private function fetchThumbnailUrl(ExistingPageRecord $page): ?string
@@ -113,10 +72,10 @@ class DiscordEmbed extends SimpleHandler
         // Discord needs an absolute URL
         $markdownUrl = str_replace([ '(', ')' ], [ '%28', '%29' ], $title->getCanonicalURL());
         $markdownTitle = $this->escapeMarkdown($title->getPrefixedText());
-        $extract = $this->escapeMarkdown($this->fetchExtract($page));
+        $description = $this->escapeMarkdown($this->fetchDescription($page));
         $thumbnail = $this->fetchThumbnailUrl($page);
 
-        $text = ['type' => 10, 'content' => "# [$markdownTitle]($markdownUrl)\n\n$extract"];
+        $text = ['type' => 10, 'content' => "# [$markdownTitle]($markdownUrl)\n\n$description"];
         $components = [ $text ];
         if ($thumbnail !== null) {
             $components = [ [
