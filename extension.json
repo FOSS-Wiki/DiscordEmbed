@@ -1,0 +1,31 @@
+{
+  "name": "DiscordEmbed",
+  "url": "https://github.com/FOSS-Wiki/DiscordEmbed",
+  "author": ["Atmois", "Eric Gardner", "Daniel Erenrich", "Arlo Breault", "GergesShamon", "Neriah", "Umherirrender"],
+  "description": "Gives article links custom Discord embeds",
+  "license-name": "GPL-2.0-or-later",
+  "requires": {
+    "MediaWiki": ">= 1.46.0"
+  },
+  "AutoloadNamespaces": {
+    "MediaWiki\\Extension\\DiscordEmbed\\": "src/"
+  },
+  "HookHandlers": {
+    "main": {
+      "class": "MediaWiki\\Extension\\DiscordEmbed\\DiscordHookHandler",
+      "services": ["MainConfig", "UrlUtils"]
+    }
+  },
+  "Hooks": {
+    "BeforePageDisplay": "main"
+  },
+  "RestRoutes": [
+    {
+      "path": "/discord-embed",
+      "method": "GET",
+      "class": "MediaWiki\\Extension\\DiscordEmbed\\DiscordEmbed",
+      "services": ["PageRestHelperFactory", "TitleFactory", "UrlUtils", "ParserOutputAccess", "PageProps", "RepoGroup", "MainWANObjectCache"]
+    }
+  ],
+  "manifest_version": 2
+}
