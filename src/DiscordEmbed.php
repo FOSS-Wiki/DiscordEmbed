@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 // Derived from the Discord feature of the WikimediaCustomizations
 // https://github.com/wikimedia/mediawiki-extensions-WikimediaCustomizations
-// GPL-2.0-or-later - Wikimedia Foundation contributors
+// GPL-2.0-or-later - Eric Gardner, Daniel Erenrich, Arlo Breault, GergesShamon, Neriah, Umherirrender
 
 namespace MediaWiki\Extension\DiscordEmbed;
 
