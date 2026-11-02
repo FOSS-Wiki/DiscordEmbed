@@ -19,6 +19,8 @@ Copy this folder to `extensions/DiscordEmbed`, then in LocalSettings.php:
     wfLoadExtension('DiscordEmbed');
 ```
 
+For the custom Main Page embed to work, you also need to have set `$wgSitename` and `$wgLogos` (`icon`) in your `LocalSettings.php` file. You should also set a value in `MediaWiki:Discordembed-mainpage-description` to fill the description of the main page embed.
+
 ## License
 
 This extension is licensed under the GPL-2.0-or-later license. See [LICENSE](LICENSE) for details.

@@ -24,7 +24,7 @@
       "path": "/discord-embed",
       "method": "GET",
       "class": "MediaWiki\\Extension\\DiscordEmbed\\DiscordEmbed",
-      "services": ["PageRestHelperFactory", "TitleFactory", "UrlUtils", "PageProps", "RepoGroup"]
+      "services": ["PageRestHelperFactory", "TitleFactory", "UrlUtils", "PageProps", "RepoGroup", "MainConfig"]
     }
   ],
   "manifest_version": 2

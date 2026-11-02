@@ -7,6 +7,8 @@
 
 namespace MediaWiki\Extension\DiscordEmbed;
 
+use MediaWiki\Config\Config;
+use MediaWiki\MainConfigNames;
 use MediaWiki\FileRepo\RepoGroup;
 use MediaWiki\Page\ExistingPageRecord;
 use MediaWiki\Page\PageProps;
@@ -31,6 +33,7 @@ class DiscordEmbed extends SimpleHandler
         private readonly UrlUtils $urlUtils,
         private readonly PageProps $pageProps,
         private readonly RepoGroup $repoGroup,
+        private readonly Config $config,
     ) {
         $this->contentHelper = $helperFactory->newPageContentHelper();
     }
@@ -47,6 +50,34 @@ class DiscordEmbed extends SimpleHandler
         return mb_strlen($description) > self::MAX_LENGTH
             ? mb_substr($description, 0, self::MAX_LENGTH - 1) . '…'
             : $description;
+    }
+
+    // Ensures that the URL for the logo is an absolute path
+    private function validateUrl(string $url): ?string
+    {
+        $expanded = $this->urlUtils->expand($url, PROTO_CANONICAL);
+        if ($expanded === null) {
+            return null;
+        }
+        if (!str_starts_with($expanded, 'http://') && !str_starts_with($expanded, 'https://')) {
+            return null;
+        }
+        return $expanded;
+    }
+
+    private function fetchLogoUrl(): ?string
+    {
+        $logos = $this->config->get(MainConfigNames::Logos);
+        if (!is_array($logos)) {
+            return null;
+        }
+
+        $url = $logos['icon'] ?? null;
+        if (!is_string($url) || $url === '') {
+            return null;
+        }
+
+        return $this->validateUrl($url);
     }
 
     private function fetchThumbnailUrl(ExistingPageRecord $page): ?string
@@ -71,17 +102,20 @@ class DiscordEmbed extends SimpleHandler
 
         // Discord needs an absolute URL
         $markdownUrl = str_replace([ '(', ')' ], [ '%28', '%29' ], $title->getCanonicalURL());
-        $markdownTitle = $this->escapeMarkdown($title->getPrefixedText());
-        $description = $this->escapeMarkdown($this->fetchDescription($page));
-        $thumbnail = $this->fetchThumbnailUrl($page);
-
         $isMainPage = $title->isMainPage();
 
         if ($isMainPage) {
-            // Custom home page embed
-            $markdownTitle = $this->escapeMarkdown('FOSS Wiki');
-            $description   = $this->escapeMarkdown('FOSS Wiki is a centralised, easy-to-use reference for the FOSS and Linux ecosystem that provides clear overviews and practical guides for all users!');
-            $thumbnail = 'https://images.foss.wiki/logo.png';
+            $markdownTitle = $this->escapeMarkdown($this->config->get(MainConfigNames::Sitename));
+            $thumbnail = $this->fetchLogoUrl();
+
+            $msg = wfMessage('discordembed-mainpage-description')->inContentLanguage();
+            $description = $this->escapeMarkdown(
+                !$msg->isDisabled() ? $msg->plain() : $this->fetchDescription($page)
+            );
+        } else {
+            $markdownTitle = $this->escapeMarkdown($title->getPrefixedText());
+            $description = $this->escapeMarkdown($this->fetchDescription($page));
+            $thumbnail = $this->fetchThumbnailUrl($page);
         }
 
         $text = [ 'type' => 10, 'content' => "# [$markdownTitle]($markdownUrl)\n\n$description" ];
